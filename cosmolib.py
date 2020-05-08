@@ -130,7 +130,7 @@ def propdist(z,cosmo,zres=0.001,accurate=False):
     if zmax < zres:
         nb=101
     else:
-        nb=zmax/zres+1
+        nb=(zmax/zres+1).astype(int)
     zvals=np.linspace(0.,zmax,nb)
     ### integrate
     cumulative=np.zeros(int(nb))
