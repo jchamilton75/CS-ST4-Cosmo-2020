@@ -7,7 +7,7 @@ from scipy import integrate
 from scipy import interpolate
 from scipy import ndimage
 import pymc
-import iminuit==1.3.7
+import iminuit
 
 
 ###############################################################################
