@@ -1,3 +1,5 @@
+from pylab import *
+import numpy as np
 import scipy.integrate
 import numpy as np
 from matplotlib import *
@@ -6,96 +8,96 @@ from scipy.ndimage import gaussian_filter1d
 from scipy import integrate
 from scipy import interpolate
 from scipy import ndimage
-import pymc
+import emcee
 import iminuit
-
+from iminuit.cost import LeastSquares
 
 ###############################################################################
 ################################### Fitting ###################################
 ###############################################################################
 ### Generic polynomial function ##########
-def thepolynomial(x,pars):
-    f=np.poly1d(pars)
-    return(f(x))
+# def thepolynomial(x,pars):
+#     f=np.poly1d(pars)
+#     return(f(x))
     
-### Generic fitting function ##############
-def dothefit(x,y,covarin,guess,functname=thepolynomial,method='minuit'):
-    if method == 'minuit':
-        print('Fitting with Minuit')
-        return(do_minuit(x,y,covarin,guess,functname))
-    else:
-        print('method must be among: minuit')
-        return(0,0,0,0)
+# ### Generic fitting function ##############
+# def dothefit(x,y,covarin,guess,functname=thepolynomial,method='minuit'):
+#     if method == 'minuit':
+#         print('Fitting with Minuit')
+#         return(do_minuit(x,y,covarin,guess,functname))
+#     else:
+#         print('method must be among: minuit')
+#         return(0,0,0,0)
 
-### Class defining the minimizer and the data
-class MyChi2:
-    def __init__(self,xin,yin,covarin,functname):
-        self.x=xin
-        self.y=yin
-        self.covar=covarin
-        self.invcov=np.linalg.inv(covarin)
-        self.functname=functname
+# ### Class defining the minimizer and the data
+# class MyChi2:
+#     def __init__(self,xin,yin,covarin,functname):
+#         self.x=xin
+#         self.y=yin
+#         self.covar=covarin
+#         self.invcov=np.linalg.inv(covarin)
+#         self.functname=functname
             
-    def __call__(self,*pars):
-        val=self.functname(self.x,pars)
-        chi2=np.dot(np.dot(self.y-val,self.invcov),self.y-val)
-        return(chi2)
+#     def __call__(self,*pars):
+#         val=self.functname(self.x,pars)
+#         chi2=np.dot(np.dot(self.y-val,self.invcov),self.y-val)
+#         return(chi2)
         
-### Call Minuit
-def do_minuit(x,y,covarin,guess,functname=thepolynomial, fixpars = False, hesse=False):
-    # check if covariance or error bars were given
-    covar=covarin
-    if np.size(np.shape(covarin)) == 1:
-        err=covarin
-        covar=np.zeros((np.size(err),np.size(err)))
-        covar[np.arange(np.size(err)),np.arange(np.size(err))]=err**2
+# ### Call Minuit
+# def do_minuit(x,y,covarin,guess,functname=thepolynomial, fixpars = False, hesse=False):
+#     # check if covariance or error bars were given
+#     covar=covarin
+#     if np.size(np.shape(covarin)) == 1:
+#         err=covarin
+#         covar=np.zeros((np.size(err),np.size(err)))
+#         covar[np.arange(np.size(err)),np.arange(np.size(err))]=err**2
                                     
-    # instantiate minimizer
-    chi2=MyChi2(x,y,covar,functname)
-    # variables
-    ndim=np.size(guess)
-    parnames=[]
-    for i in range(ndim): parnames.append('c'+np.str(i))
-    # initial guess
-    theguess=dict(zip(parnames,guess))
-    # fixed parameters
-    dfix = {}
-    if fixpars:
-        for i in range(len(parnames)): dfix['fix_'+parnames[i]]=fixpars[i]
-    else:
-        for i in range(len(parnames)): dfix['fix_'+parnames[i]]=False
-    #stop
-    # Run Minuit
-    print('Fitting with Minuit')
-    theargs = dict(theguess.items())
-    theargs.update(dfix.items())
-    if theargs is None:
-        m = iminuit.Minuit(chi2,forced_parameters=parnames,errordef=1.)
-    else:
-        m = iminuit.Minuit(chi2,forced_parameters=parnames,errordef=1.,**theargs)
-    m.migrad()
-    if hesse: m.hesse()
-    # build np.array output
-    parfit=[]
-    for i in parnames: parfit.append(m.values[i])
-    errfit=[]
-    for i in parnames: errfit.append(m.errors[i])
-    ndimfit = int(np.sqrt(len(m.covariance)))
-    covariance=np.zeros((ndimfit,ndimfit))
-    if fixpars:
-        parnamesfit = []
-        for i in range(len(parnames)):
-            if fixpars[i] == False: parnamesfit.append(parnames[i])
-            if fixpars[i] == True: errfit[i]=0
-    else:
-        parnamesfit = parnames
-    for i in range(ndimfit):
-        for j in range(ndimfit):
-            covariance[i,j]=m.covariance[(parnamesfit[i],parnamesfit[j])]
+#     # instantiate minimizer
+#     chi2=MyChi2(x,y,covar,functname)
+#     # variables
+#     ndim=np.size(guess)
+#     parnames=[]
+#     for i in range(ndim): parnames.append('c'+np.str(i))
+#     # initial guess
+#     theguess=dict(zip(parnames,guess))
+#     # fixed parameters
+#     dfix = {}
+#     if fixpars:
+#         for i in range(len(parnames)): dfix['fix_'+parnames[i]]=fixpars[i]
+#     else:
+#         for i in range(len(parnames)): dfix['fix_'+parnames[i]]=False
+#     #stop
+#     # Run Minuit
+#     print('Fitting with Minuit')
+#     theargs = dict(theguess.items())
+#     theargs.update(dfix.items())
+#     if theargs is None:
+#         m = iminuit.Minuit(chi2,forced_parameters=parnames,errordef=1.)
+#     else:
+#         m = iminuit.Minuit(chi2,forced_parameters=parnames,errordef=1.,**theargs)
+#     m.migrad()
+#     if hesse: m.hesse()
+#     # build np.array output
+#     parfit=[]
+#     for i in parnames: parfit.append(m.values[i])
+#     errfit=[]
+#     for i in parnames: errfit.append(m.errors[i])
+#     ndimfit = int(np.sqrt(len(m.covariance)))
+#     covariance=np.zeros((ndimfit,ndimfit))
+#     if fixpars:
+#         parnamesfit = []
+#         for i in range(len(parnames)):
+#             if fixpars[i] == False: parnamesfit.append(parnames[i])
+#             if fixpars[i] == True: errfit[i]=0
+#     else:
+#         parnamesfit = parnames
+#     for i in range(ndimfit):
+#         for j in range(ndimfit):
+#             covariance[i,j]=m.covariance[(parnamesfit[i],parnamesfit[j])]
 
-    print('Chi2=',chi2(*parfit))
-    print('ndf=',np.size(x)-ndim)
-    return(m,np.array(parfit), np.array(errfit), np.array(covariance))
+#     print('Chi2=',chi2(*parfit))
+#     print('ndf=',np.size(x)-ndim)
+#     return(m,np.array(parfit), np.array(errfit), np.array(covariance))
 
 ###############################################################################
 ###############################################################################
@@ -233,68 +235,202 @@ def progress_bar(i,n):
 
 
 ###############################################################################
-########################## Monte-Carlo Markov-Chains Functions ################
+########################## Fitting Class (minuit & MCMC) ################
 ###############################################################################
-### define data classes
-class Data():
-    def __init__(self, xvals=None, yvals=None, errors = None, model=None, prior=False):
-        self.prior = prior
+class Data:
+    def __init__(self, x, y, cov, model, pnames=None):
+        self.x = x
+        self.y = y
         self.model = model
-        self.xvals = xvals
-        self.yvals = yvals
-        if not self.prior:
-            if np.size(np.shape(errors)) == 1:
-                self.covar=np.zeros((np.size(errors),np.size(errors)))
-                self.covar[np.arange(np.size(errors)),np.arange(np.size(errors))]=errors**2
-            else:
-                self.covar = errors
-            self.invcov = np.linalg.inv(self.covar)
-    
-    def __call__(self,*pars):
-        if  not self.prior:
-            val=self.model(self.xvals,pars[0])
-            chi2=np.dot(np.dot(self.yvals-val,self.invcov),self.yvals-val)
+        self.cov = cov
+        if np.prod(np.shape(x)) == np.prod(np.shape(cov)):
+            self.diag = True
+            self.errors = cov
+            self.invcov = np.diag(1./self.errors**2)
         else:
-            chi2 = self.model(self.xvals, pars[0])
-        return(-0.5*chi2)
+            self.diag = False
+            self.errors = 1./np.sqrt(cov)
+            self.invcov = np.linalg.inv(cov)
+        self.fit = None
+        self.fitinfo = None
+        self.pnames = pnames
+        self.fixedpars = None
+        
+    def __call__(self, mytheta, extra_args=None, verbose=False):
+        if self.fixedpars is not None:
+            theta = self.p0.copy()
+            theta[self.fitpars] = mytheta
+        else:
+            theta = mytheta
+        # theta = mytheta
+        self.modelval = self.model(self.x, theta)
+
+        if verbose:
+            print('Pars')
+            print(theta)
+            print('Y')
+            print(np.shape(self.y))
+            print(self.yvals[0:10])
+            print('Model')
+            print(np.shape(self.modelval))
+            print(self.modelval[:10])
+            print('Diff')
+            print(np.shape((self.y - self.modelval)))
+            print((self.yvals - self.modelval)[0:10])
+            print('Diff x invcov')
+            print(np.shape((self.y - self.modelval).T @ self.invcov))
+            print(((self.y - self.modelval).T @ self.invcov)[0:10])
+        logLLH = - 0.5 * (((self.y - self.modelval).T @ self.invcov) @ (self.y - self.modelval))
+        if not np.isfinite(logLLH):
+            return -np.inf
+        else:
+            return logLLH
+
+    def plot(self, nn=1000, color=None, mylabel=None, nostat=False):
+        p=errorbar(self.x, self.y, yerr=self.errors, fmt='o', color=color, alpha=1)
+        if self.fit is not None:
+            xx = np.linspace(np.min(self.x), np.max(self.x), nn)
+            plot(xx, self.model(xx, self.fit), color=p[0].get_color(), alpha=1, label=mylabel)
+        if mylabel is None:
+            if nostat == False:
+                legend(title="\n".join(self.fit_info))
+        else:
+            legend()
 
 
-def generic_ll_model(datasets, allvariables, fitvariables = None, fidvalues = None, limits=None):
-    if (isinstance(datasets, list) is False): datasets=[datasets]
-    if fitvariables is None:
-        fitvariables = allvariables
-    nvar = len(allvariables)
-    if fidvalues is None:
-        fidvalues = np.zeros(nvar)
-    if limits is None:
-        limits = np.zeros((2,nvar))
-        limits[0,:] = -10.
-        limits[1,:] = 10.
-    allvars = []
-    for i in range(nvar):
-        allvars.append(pymc.Uniform(allvariables[i], limits[0,i], limits[1,i], value = fidvalues[i], 
-                                 observed = allvariables[i] not in fitvariables))
-    @pymc.stochastic(trace=True,observed=True,plot=False)
-    def loglikelihood(value=0, pars = allvars):
-        ll=0.
-        for ds in datasets:
-            ll=ll+ds(pars)
-        return(ll)
-    return(locals())
+    def fit_minuit(self, guess, fixpars = None, limits=None, scan=None, renorm=False, simplex=False, minimizer=LeastSquares):
+        ok = np.isfinite(self.x) & (self.errors != 0)
+
+        ### Prepare Minimizer
+        if self.diag == True:
+            myminimizer = minimizer(self.x[ok], self.y[ok], self.errors[ok], self.model)
+        else:
+            print('Non diagonal covariance not yet implemented: using only diagonal')
+            myminimizer = minimizer(self.x[ok], self.y[ok], self.errors[ok], self.model)
+
+        ### Instanciate the minuit object
+        if simplex == False:
+            m = iminuit.Minuit(myminimizer, guess, name=self.pnames)
+        else:
+            m = iminuit.Minuit(myminimizer, guess, name=self.pnames).simplex()
+        
+        ### Limits
+        if limits is not None:
+            mylimits = []
+            for k in range(len(guess)):
+                mylimits.append((None, None))
+            for k in range(len(limits)):
+                mylimits[limits[k][0]] = (limits[k][1], limits[k][2])
+            m.limits = mylimits
+
+        ### Fixed parameters
+        if fixpars is not None:
+            for k in range(len(guess)):
+                m.fixed["x{}".format(k)]=False
+            for k in range(len(fixpars)):
+                m.fixed["x{}".format(fixpars[k])]=True
+
+        ### If requested, perform a scan on the parameters
+        if scan is not None:
+            m.scan(ncall=scan)
+
+        ### Call the minimization
+        m.migrad()  
+
+        ### accurately computes uncertainties
+        m.hesse()   
+
+        ch2 = m.fval
+        ndf = len(self.x[ok]) - m.nfit
+        self.fit = m.values
+
+        self.fit_info = [
+            f"$\\chi^2$ / $n_\\mathrm{{dof}}$ = {ch2:.1f} / {ndf}",
+        ]
+        for i in range(len(guess)):
+            vi = m.values[i]
+            ei = m.errors[i]
+            self.fit_info.append(f"{m.parameters[i]} = ${vi:.3f} \\pm {ei:.3f}$")
+
+        if renorm:
+            m.errors *= 1./np.sqrt(ch2/ndf)
+
+        return m, ch2, ndf
+
+    def run_mcmc(self, p0, allvariables, nbmc=3000, fixpars=None, nwalkers=32, nsigmas=10., fidvalues=None):
+        if fidvalues is not None:
+            p0 = fidvalues
+        if fixpars is not None:
+            self.fixedpars = fixpars
+            self.p0 = p0
+            fitpars = []
+            for i in range(len(allvariables)):
+                if i not in fixpars:
+                    fitpars.append(i)
+            self.fitpars = np.array(fitpars)
+
+        print(fixpars)
+        print(self.fixedpars)
+
+        ### Do a minuit fit first
+        fitm, ch2, ndf = self.fit_minuit(p0, fixpars=fixpars)
+        parm = np.array(fitm.values)
+        errm = np.array(fitm.errors)
+        
+        ndim = len(p0)
+        pos = np.zeros((nwalkers, ndim))
+        for d in range(ndim):
+            pos[:, d] = np.random.randn(nwalkers) * np.sqrt(errm[d]) * nsigmas + parm[d]
+        print('Ndim init:', ndim)
+        if fixpars is not None:
+            ndim = len(allvariables) - len(self.fixedpars)
+        print('New ndim:', ndim)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.__call__)
+        if fixpars is not None:
+            print('Len(pos):', np.shape(pos))
+            print('len(fixepars):', len(fixpars))
+            pos = pos[:, self.fitpars]
+            print('New len(pos):', np.shape(pos))
+        ## Burn
+        print('Burning')
+        state = sampler.run_mcmc(pos, nbmc//3, progress=True)
+        sampler.reset()
+        ## sample
+        print('Sampling')
+        sampler.run_mcmc(state, nbmc, progress=True)
+
+        allchains = sampler.get_chain(flat=True)
+        chains = {}
+        num = 0
+        for i in range(len(allvariables)):
+            if fixpars is None:
+                chains[allvariables[i]] = allchains[:,i]
+            else:
+                if i in self.fitpars:
+                    chains[allvariables[i]] = allchains[:,num]
+                    num += 1
+        return chains
 
 
-def run_mcmc(data, allvariables, niter=80000, nburn=20000, nthin=1, external=None,
-             fitvariables = None, fidvalues = None, limits = None,
-             the_ll_model=generic_ll_model,delay=1000, fid_params=None):
-    chain = pymc.MCMC(the_ll_model(data, allvariables, fitvariables = fitvariables,
-                                   fidvalues=fidvalues, limits=limits))
-    chain.use_step_method(pymc.AdaptiveMetropolis,chain.stochastics,delay=delay)
-    chain.sample(iter=niter,burn=nburn,thin=nthin)
-    ch ={}
-    if fitvariables is None: fitvariables=allvariables
-    for v in fitvariables: ch[v] = chain.trace(v)[:]
-    return ch
+def thepolynomial(x,pars):
+    f=np.poly1d(pars)
+    return(f(x))
 
+def do_minuit(x,y,covarin,guess,functname=thepolynomial, verbose=True, fixpars=None):
+    data = Data(x,y,covarin, functname)
+    if verbose:
+        print('Fitting with Minuit')
+    fitm, ch2, ndf = data.fit_minuit(guess, fixpars=fixpars)
+    if verbose:
+        print('Chi2 = {}'.format(ch2))
+        print('ndf = {}'.format(ndf))
+        print('Fitted values:')
+        print(np.array(fitm.values))
+        print('Errors:')
+        print(np.array(fitm.errors))
+        print('Covariance:')
+        print(np.array(fitm.covariance))
+    return fitm, np.array(fitm.values), np.array(fitm.errors), np.array(fitm.covariance), ch2, ndf
 
 def matrixplot(chain,vars,col,sm,limits=None,nbins=None,doit=None,alpha=0.7,labels=None):
     nplots=len(vars)
@@ -342,21 +478,21 @@ def matrixplot(chain,vars,col,sm,limits=None,nbins=None,doit=None,alpha=0.7,labe
     return(a0)
     
 def getcols(color):
-    if color is 'blue':
+    if color == 'blue':
         cols=['SkyBlue','MediumBlue']
-    elif color is 'red':
+    elif color == 'red':
         cols=['LightCoral','Red']
-    elif color is 'green':
+    elif color == 'green':
         cols=['LightGreen','Green']
-    elif color is 'pink':
+    elif color == 'pink':
         cols=['LightPink','HotPink']
-    elif color is 'orange':
+    elif color == 'orange':
         cols=['Coral','OrangeRed']
-    elif color is 'yellow':
+    elif color == 'yellow':
         cols=['Yellow','Gold']
-    elif color is 'purple':
+    elif color == 'purple':
         cols=['Violet','DarkViolet']
-    elif color is 'brown':
+    elif color == 'brown':
         cols=['BurlyWood','SaddleBrown']
     return(cols)
 
