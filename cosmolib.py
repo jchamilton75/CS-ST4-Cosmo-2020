@@ -266,7 +266,7 @@ class Data:
 
         return m, ch2, ndf
 
-    def run_mcmc(self, p0, allvariables, nbmc=3000, fixpars=None, nwalkers=32, nsigmas=10., fidvalues=None):
+    def run_mcmc(self, p0, allvariables, nbmc=3000, fixpars=None, nwalkers=32, nsigmas=3., fidvalues=None):
         if fidvalues is not None:
             p0 = fidvalues
         if fixpars is not None:
