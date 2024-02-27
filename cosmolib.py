@@ -368,7 +368,7 @@ def matrixplot(chain,vars,col,sm,limits=None,nbins=None,doit=None,alpha=0.7,labe
                 ylim(0,1.2)
                 if (var in chain.keys()) and (doit[j]==True):
                     if nbins is None: nbins=100
-                    bla=np.histogram(chain[var],bins=nbins,normed=True)
+                    bla=np.histogram(chain[var],bins=nbins,density=True)
                     xhist=(bla[1][0:nbins]+bla[1][1:nbins+1])/2
                     yhist=gaussian_filter1d(bla[0],ss[i]/5/(xhist[1]-xhist[0]))
                     plot(xhist,yhist/max(yhist),color=col, label = '{0:.2g} +/- {1:.2g}'.format(np.mean(chain[var]), np.std(chain[var])))
