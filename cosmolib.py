@@ -321,6 +321,29 @@ class Data:
         return chains
 
 
+
+class Datas(Data):
+    def __init__(self, datalist, pnames=None):
+        self.ndatas = len(datalist)
+        self.datas = []
+        for i in range(len(datalist)):
+            self.datas.append(datalist[i])
+        self.pnames = pnames
+        self.fixedpars = None
+
+    def __call__(self, mytheta, extra_args=None, verbose=False):
+        logLLH = 0.
+        for i in range(self.ndatas):
+            logLLH += self.datas[i](mytheta, extra_args=extra_args, verbose=verbose)
+        return logLLH
+
+    def fit_minuit(self, guess, fixpars = None, limits=None, scan=None, renorm=False, simplex=False, minimizer=LeastSquares):
+        for i in range(self.ndatas):
+            m, ch2, ndf = self.datas[i].fit_minuit(guess, fixpars=fixpars, limits=limits, scan=scan, renorm=renorm, simplex=simplex, minimizer=minimizer)
+        return m, ch2, ndf
+
+
+
 def thepolynomial(x,pars):
     f=np.poly1d(pars)
     return(f(x))
