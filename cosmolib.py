@@ -278,8 +278,8 @@ class Data:
                     fitpars.append(i)
             self.fitpars = np.array(fitpars)
 
-        print(fixpars)
-        print(self.fixedpars)
+        print('fixpars',fixpars)
+        print('self.fixedpars',self.fixedpars)
 
         ### Do a minuit fit first
         fitm, ch2, ndf = self.fit_minuit(p0, fixpars=fixpars)
