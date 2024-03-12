@@ -285,6 +285,8 @@ class Data:
         fitm, ch2, ndf = self.fit_minuit(p0, fixpars=fixpars)
         parm = np.array(fitm.values)
         errm = np.array(fitm.errors)
+        print(parm)
+        print(errm)
         
         ndim = len(p0)
         pos = np.zeros((nwalkers, ndim))
