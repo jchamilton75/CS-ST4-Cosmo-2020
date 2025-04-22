@@ -45,7 +45,7 @@ def propdist(z,cosmo,zres=0.001,accurate=False):
     zvals=np.linspace(0.,zmax,nb)
     ### integrate
     cumulative=np.zeros(int(nb))
-    cumulative[1:]=scipy.integrate.cumtrapz(1./e_z(zvals,cosmo),zvals)
+    cumulative[1:]=scipy.integrate.cumulative_trapezoid(1./e_z(zvals,cosmo),zvals)
     ### interpolation to input z values
     propdist=np.interp(z,zvals,cumulative)
     ### curvature
