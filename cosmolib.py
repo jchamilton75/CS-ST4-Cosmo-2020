@@ -83,7 +83,7 @@ def lookback(z,cosmo,zres=0.001):
     zvals=np.linspace(0.,zmax,nb)
     ### integrate
     cumulative=np.zeros(int(nb))
-    cumulative[1:]=scipy.integrate.cumtrapz(1./e_z(zvals,cosmo)/(1+zvals),zvals)
+    cumulative[1:]=scipy.integrate.cumulative_trapezoid(1./e_z(zvals,cosmo)/(1+zvals),zvals)
     ### interpolation to input z values
     age=np.interp(z,zvals,cumulative)
     ### Age in Gyr
@@ -450,7 +450,7 @@ def cont(x,y,xlim=None,ylim=None,levels=[0.9545,0.6827],alpha=0.7,color='blue',n
     z=scipy.ndimage.filters.gaussian_filter(a,nsmooth)
     z=z/np.sum(z)/dx/dy
     sz=np.sort(z.flatten())[::-1]
-    cumsz=integrate.cumtrapz(sz)
+    cumsz=integrate.cumulative_trapezoid(sz)
     cumsz=cumsz/max(cumsz)
     f=interpolate.interp1d(cumsz,np.arange(np.size(cumsz)))
     indices=f(levels).astype('int')
