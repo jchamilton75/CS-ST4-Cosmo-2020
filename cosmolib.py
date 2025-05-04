@@ -8,6 +8,7 @@ from scipy.ndimage import gaussian_filter1d
 from scipy import integrate
 from scipy import interpolate
 from scipy import ndimage
+import scipy.stats as st
 import emcee
 import iminuit
 from iminuit.cost import LeastSquares
@@ -441,7 +442,7 @@ def cont(x,y,xlim=None,ylim=None,levels=[0.9545,0.6827],alpha=0.7,color='blue',n
     if ylim is None: ylim=[np.min(y)-dy/3,np.max(y)+dy/3]
     range=[xlim,ylim]
 
-    a,xmap,ymap=scipy.histogram2d(x,y,bins=256,range=range)
+    a,xmap,ymap=st.histogram2d(x,y,bins=256,range=range)
     a=np.transpose(a)
     xmap=xmap[:-1]
     ymap=ymap[:-1]
